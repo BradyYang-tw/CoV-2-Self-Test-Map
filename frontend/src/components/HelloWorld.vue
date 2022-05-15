@@ -1,10 +1,17 @@
 <script setup>
+import { ref } from "vue";
 defineProps({
   msg: {
     type: String,
-    required: true
-  }
-})
+    required: true,
+  },
+});
+
+const b = ref("qdew");
+
+function change(){
+  b.value=b.value + "ok" 
+}
 </script>
 
 <template>
@@ -15,6 +22,8 @@ defineProps({
       <a target="_blank" href="https://vitejs.dev/">Vite</a> +
       <a target="_blank" href="https://vuejs.org/">Vue 3</a>.
     </h3>
+    {{ b }}
+    <button @click="change"></button>
   </div>
 </template>
 

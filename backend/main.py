@@ -1,4 +1,8 @@
 import requests
+import csv
+import json
+import pandas as pd
+import io
 from flask import Flask, jsonify
 app = Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
@@ -8,11 +12,19 @@ def hello():
     return "Test Flask"
 
 
-@app.route("/getData")
+@app.route("/getRapidTestKits")
 def get_data():
-    url = "https://quality.data.gov.tw/dq_download_json.php?nid=152408&md5_url=8699cd0ecbfcc5b30a577b53026fe02b"
-    r = requests.post(url, {"nid": 152408})
-    response = jsonify({'msg': r.json()})
+    url = "https://data.nhi.gov.tw/Datasets/Download.ashx?rid=A21030000I-D03001-001&l=https://data.nhi.gov.tw/resource/Nhi_Fst/Fstdata.csv"
+    r = requests.post(url, {"nid": 152408}).content
+    df = pd.read_csv(io.StringIO(r.decode('utf-8')))
+
+    # # Convert to iterator by splitting on \n chars
+    # lines = r.text.splitlines()
+    # # Parse as CSV object
+    # reader = csv.reader(lines)
+    # print(df.to_json(orient='index', force_ascii=False))
+    # response = jsonify({'msg': df.to_json(orient='records', force_ascii=False)})
+    response = json.dumps(json.loads(df.to_json(orient='records', force_ascii=False)), indent=2)
     return response
 
 

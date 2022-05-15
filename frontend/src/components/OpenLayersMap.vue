@@ -1,35 +1,79 @@
 <script setup>
-import { ref } from "vue";
+import { ref, reactive, onMounted, onBeforeMount } from "vue";
+import { getData } from "@/api/openData";
 
+// 地圖基本資訊
 const center = ref([40, 40]);
 const projection = ref("EPSG:4326");
-const zoom = ref(16);
+const zoom = ref(18);
 const rotation = ref(0);
 
-// console.log(center.value)
+// 取得座標位置
 function successHandler(position) {
-    center.value[0] = position.coords.longitude;
-    center.value[1] = position.coords.latitude;
-    
-//   console.log(position.coords.latitude, position.coords.longitude);
+  console.log(position.coords);
+  center.value[0] = position.coords.longitude;
+  center.value[1] = position.coords.latitude;
 }
 
 function errorHandler(err) {
   console.log(err);
 }
-
 navigator.geolocation.getCurrentPosition(successHandler, errorHandler, {
   enableHighAccuracy: true,
   timeout: 5000,
   maximumAge: 0,
 });
+
+// 取得所有快篩資料
+// first
+const information = reactive({ data: [] });
+const getD = function () {
+  getData()
+    .then((response) => {
+      console.log(response);
+      information.data = response.data;
+    })
+    .catch()
+    .finally();
+};
+
+// second (Vue有Bug)
+// const information = ref([]);
+// const getD = function () {
+//   getData()
+//     .then((response) => {
+//       // information.value = information.value.concat(response.data.msg);
+//       information.value = response.data.msg;
+//       console.log(information.value)
+//     })
+//     .catch()
+//     .finally();
+// };
+onMounted(() => {
+  getD();
+});
+
+// 每30秒更新
+// window.setInterval(() => {
+//   setTimeout(getD, 0);
+// }, 30000);
+
+const overrideStyleFunction = (feature, style) => {
+  let clusteredFeatures = feature.get("features");
+  let size = clusteredFeatures.length;
+
+  style.getText().setText(size.toString());
+};
 </script>
 
 <template>
+  <!-- <div class="div-right" v-if="information.data.length > 0">
+    上次更新時間 ： {{ information.data[0].來源資料時間 }}
+  </div> -->
   <ol-map
     :loadTilesWhileAnimating="true"
     :loadTilesWhileInteracting="true"
-    style="height: 1000px;"
+    style="height: 1000px"
   >
     <ol-view
       ref="view"
@@ -42,31 +86,56 @@ navigator.geolocation.getCurrentPosition(successHandler, errorHandler, {
       <ol-source-osm />
     </ol-tile-layer>
 
-    <ol-overlay :position="[ 120.3061704837771, 22.64975823049841 ]">
-        <template v-slot="slotProps">
-            <div class="overlay-content">
-                Home<br>
-                Position: {{ slotProps.position }}
-            </div>
-        </template>
-    </ol-overlay>
-    <ol-overlay :position="[ 120.3061704837771, 22.643912738628673 ]">
-        <template v-slot="slotProps">
-            <div class="overlay-content">
-                Basketball Court<br>
-                Position: {{ slotProps.position }}
-            </div>
-        </template>
-    </ol-overlay>
-    
+    <!-- <div v-for="(item, index) in information.value" :key="index"> -->
+    <div v-for="(item, index) in information.data" :key="index">
+      <ol-overlay :position="[item.經度, item.緯度]">
+        <div class="overlay-content">
+          {{ item.醫事機構名稱 }}<br />
+          地址: {{ item.醫事機構地址 }} <br />
+          電話: {{ item.醫事機構電話 }}<br />
+          存貨數量:
+          {{ item.快篩試劑截至目前結餘存貨數量 }}
+        </div>
+      </ol-overlay>
+    </div>
+    <!-- <ol-vector-layer>
+      <ol-source-cluster :distance="40">
+        <ol-source-vector>
+          <ol-feature v-for="(item, index) in information.data" :key="index">
+            <ol-geom-point
+              :coordinates="[item.經度, item.緯度]"
+            ></ol-geom-point>
+          </ol-feature>
+        </ol-source-vector>
+      </ol-source-cluster>
+
+      <ol-style :overrideStyleFunction="overrideStyleFunction">
+        <ol-style-stroke color="red" :width="2"></ol-style-stroke>
+        <ol-style-fill color="rgba(255,255,255,0.1)"></ol-style-fill>
+
+        <ol-style-circle :radius="10">
+          <ol-style-fill color="#3399CC"></ol-style-fill>
+          <ol-style-stroke color="#fff" :width="1"></ol-style-stroke>
+        </ol-style-circle>
+        <ol-style-text>
+          <ol-style-fill color="#fff"></ol-style-fill>
+        </ol-style-text>
+      </ol-style>
+    </ol-vector-layer> -->
   </ol-map>
 </template>
 
 <style>
 .overlay-content {
-    background: #efefef;
-    box-shadow: 0 5px 10px rgb(2 2 2 / 20%);
-    padding: 10px 20px;
-    font-size: 16px;
+  background: #efefef;
+  box-shadow: 0 5px 10px rgb(2 2 2 / 20%);
+  padding: 10px 20px;
+  font-size: 16px;
+}
+
+.div-right {
+  font-family: DFKai-sb;
+  font-weight: bold;
+  float: right;
 }
 </style>

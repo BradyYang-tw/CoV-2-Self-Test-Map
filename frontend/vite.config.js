@@ -10,5 +10,36 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
+  },
+  server: {
+    proxy: {
+      // string shorthand
+      // '/getData': 'http://localhost:5000/getData',
+      // with options
+      '/getRapidTestKits': {
+        target: 'http://localhost:5000/getRapidTestKits',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/getRapidTestKits/, '')
+      },
+      // with RegEx
+      '^/fallback/.*': {
+        target: 'http://jsonplaceholder.typicode.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/fallback/, '')
+      },
+      // // Using the proxy instance
+      // '/api': {
+      //   target: 'http://jsonplaceholder.typicode.com',
+      //   changeOrigin: true,
+      //   configure: (proxy, options) => {
+      //     // proxy will be an instance of 'http-proxy'
+      //   }
+      // },
+      // // Proxying websockets or socket.io
+      // '/socket.io': {
+      //   target: 'ws://localhost:3000',
+      //   ws: true
+      // }
+    }
   }
 })
