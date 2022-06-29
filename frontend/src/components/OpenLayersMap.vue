@@ -1,41 +1,56 @@
 <script setup>
-import { ref, reactive, onMounted, onBeforeMount } from "vue";
-import { getData } from "@/api/openData";
+import { ref, reactive, getCurrentInstance, onMounted, onBeforeMount, toRefs } from "vue";
+// import { getData } from "@/api/openData";
 
 // 地圖基本資訊
 const center = ref([40, 40]);
 const projection = ref("EPSG:4326");
-const zoom = ref(18);
+const zoom = ref(17);
 const rotation = ref(0);
 
 // 取得座標位置
+let map = getCurrentInstance();
 function successHandler(position) {
-  console.log(position.coords);
   center.value[0] = position.coords.longitude;
   center.value[1] = position.coords.latitude;
+  console.log(map);
+  map.ctx.$refs.map.render()
 }
 
 function errorHandler(err) {
   console.log(err);
 }
-navigator.geolocation.getCurrentPosition(successHandler, errorHandler, {
-  enableHighAccuracy: true,
-  timeout: 5000,
-  maximumAge: 0,
-});
+function getMyLocation() {
+  console.log("WTF");
+  navigator.geolocation.getCurrentPosition(successHandler, errorHandler, {
+    enableHighAccuracy: true,
+    timeout: 5000,
+    maximumAge: 0,
+  });
+}
+
 
 // 取得所有快篩資料
+const props = defineProps({
+  information: {
+    type: Array,
+    required: true,
+    default: [],
+  },
+});
+const { information } = toRefs(props);
+
 // first
-const information = reactive({ data: [] });
-const getD = function () {
-  getData()
-    .then((response) => {
-      console.log(response);
-      information.data = response.data;
-    })
-    .catch()
-    .finally();
-};
+// const information = reactive({ data: [] });
+// const getD = function () {
+//   getData()
+//     .then((response) => {
+//       console.log(response);
+//       information.data = response.data;
+//     })
+//     .catch()
+//     .finally();
+// };
 
 // second (Vue有Bug)
 // const information = ref([]);
@@ -49,8 +64,13 @@ const getD = function () {
 //     .catch()
 //     .finally();
 // };
+
 onMounted(() => {
-  getD();
+  getMyLocation();
+  // getD();
+  // console.log(getCurrentInstance().ctx.$refs.map);
+  // console.log(information);
+  
 });
 
 // 每30秒更新
@@ -61,7 +81,6 @@ onMounted(() => {
 const overrideStyleFunction = (feature, style) => {
   let clusteredFeatures = feature.get("features");
   let size = clusteredFeatures.length;
-
   style.getText().setText(size.toString());
 };
 </script>
@@ -70,11 +89,24 @@ const overrideStyleFunction = (feature, style) => {
   <!-- <div class="div-right" v-if="information.data.length > 0">
     上次更新時間 ： {{ information.data[0].來源資料時間 }}
   </div> -->
+  <el-button type="primary" @click="getMyLocation"> 現在位置</el-button>
+
   <ol-map
+   ref="map"
     :loadTilesWhileAnimating="true"
     :loadTilesWhileInteracting="true"
     style="height: 1000px"
   >
+    <!-- <ol-zoomtoextent-control
+      :extent="[22.6465861, 120.3089428]"
+      tipLabel="Fit to Turkey"
+    />
+    <ol-scaleline-control />
+    <ol-rotate-control />
+    <ol-zoom-control />
+    <ol-zoomslider-control /> -->
+    <!-- <ol-zoomtoextent-control :extent="[120.3089428, 22.6465861, 22.6465861, ]" tipLabel="Fit to Turkey" /> -->
+
     <ol-view
       ref="view"
       :center="center"

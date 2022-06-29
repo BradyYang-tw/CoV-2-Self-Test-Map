@@ -1,25 +1,71 @@
 <script setup>
+import {
+  ref,
+  reactive,
+  getCurrentInstance,
+  onMounted,
+  onBeforeMount,
+  computed,
+} from "vue";
 import HelloWorld from "./components/HelloWorld.vue";
-import TheWelcome from "./components/TheWelcome.vue";
+import Table from "./components/Table.vue";
 import OpenLayersMap from "./components/OpenLayersMap.vue";
+import { getData } from "@/api/openData";
+// 取得所有快篩資料
+// first
+const information = reactive({ data: [] });
+const getD = function () {
+  getData()
+    .then((response) => {
+      console.log(response);
+      information.data = response.data;
+    })
+    .catch()
+    .finally();
+};
+
+onMounted(() => {
+  getD();
+});
+
+const routes = {
+  "/": OpenLayersMap,
+  "/table": Table,
+};
+const currentPath = ref(window.location.hash);
+
+window.addEventListener("hashchange", () => {
+  currentPath.value = window.location.hash;
+});
+
+const currentView = computed(() => {
+  return routes[currentPath.value.slice(1) || "/"] || NotFound;
+});
 </script>
 
 <template>
   <header>
-    <img
+    <!-- <img
       alt="Vue logo"
       class="logo"
       src="./assets/logo.svg"
       width="125"
       height="125"
-    />
+    /> -->
   </header>
-    <HelloWorld msg="快篩實名制" />
+  <HelloWorld msg="快篩實名制" />
   <main>
-    <div>
-      <OpenLayersMap />
-    </div>
-    <TheWelcome />
+    <nav>
+      <ul>
+        <li><a href="#/">Map</a></li>
+        <li><a href="#/table">Table</a></li>
+      </ul>
+    </nav>
+    <article>
+      <!-- <OpenLayersMap v-if="currentPath.value == '#/'" :information="information" />
+      <Table v-else :information="information" /> -->
+      <component :is="currentView" :information="information" />
+    </article>
   </main>
 </template>
 
@@ -82,6 +128,39 @@ a,
 
   .logo {
     margin: 0 2rem 0 0;
+  }
+
+  /* Create two columns/boxes that floats next to each other */
+  nav {
+    float: left;
+    width: 10%;
+    height: 100vh; /* only for demonstration, should be removed */
+    background: #ccc;
+    padding: 20px;
+  }
+
+  /* Style the list inside the menu */
+  nav ul {
+    list-style-type: none;
+    padding: 0;
+  }
+
+  nav a {
+    color: inherit; /* 移除超連結顏色 */
+    font-size: 1.2rem;
+    text-decoration: none; /* 移除超連結底線 */
+  }
+  nav li:hover {
+    background-color: rgb(115, 115, 115);
+    color: white;
+  }
+
+  article {
+    float: left;
+    padding: 20px;
+    width: 90%;
+    background-color: #f1f1f1;
+    height: 300px; /* only for demonstration, should be removed */
   }
 }
 </style>
